@@ -1,8 +1,11 @@
+import os
 import networkx as nx
 import numpy as np
 from collections import defaultdict
 
-G = nx.read_graphml("civicmind_graph.graphml")
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+
+G = nx.read_graphml(os.path.join(SCRIPT_DIR, "dataset", "civicmind_graph.graphml"))
 
 print(f"No of edges: {G.number_of_edges()}")
 print(f"No of nodes: {G.number_of_nodes()}")

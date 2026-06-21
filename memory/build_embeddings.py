@@ -1,9 +1,13 @@
+import os
 import pandas as pd
 from sentence_transformers import SentenceTransformer
 import faiss
 import numpy as np
 
-df = pd.read_csv("../dataset/civicmind_episodes.csv")
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.join(SCRIPT_DIR, "..")
+
+df = pd.read_csv(os.path.join(PROJECT_ROOT, "dataset", "civicmind_episodes.csv"))
 
 def create_memory_text(row):
 
@@ -43,9 +47,9 @@ dimension = embeddings_array.shape[1]
 index = faiss.IndexFlatL2(dimension)
 index.add(embeddings_array)
 
-faiss.write_index(index, "../dataset/civicmind_memory.index")
+faiss.write_index(index, os.path.join(PROJECT_ROOT, "dataset", "civicmind_memory.index"))
 
 df["memory_text"] = memory_texts
 
-df.to_pickle("../dataset/episode_lookup.pkl")
+df.to_pickle(os.path.join(PROJECT_ROOT, "dataset", "episode_lookup.pkl"))
 

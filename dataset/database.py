@@ -1,7 +1,10 @@
+import os
 import pandas as pd
 import numpy as np
 import random
 from datetime import datetime, timedelta
+
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 NUM_EPISODES = 10000
 
@@ -262,7 +265,7 @@ for i in range(NUM_EPISODES):
 df = pd.DataFrame(records)
 
 df.to_csv(
-    "civicmind_episodes.csv",
+    os.path.join(SCRIPT_DIR, "civicmind_episodes.csv"),
     index=False
 )
 

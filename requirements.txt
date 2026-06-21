@@ -2,3 +2,5 @@ pandas
 faiss-cpu
 torch
 sentence-transformers
+networkx
+numpy
