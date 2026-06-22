@@ -6,6 +6,8 @@ CivicMind is a memory-augmented decision support system for urban civic manageme
 
 **Core philosophy:** *Between the input and output is memory, not a model.*
 
+Live at: https://civic-mind-ashy.vercel.app/
+
 ---
 
 ## System Architecture
