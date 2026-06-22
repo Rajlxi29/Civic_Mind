@@ -55,16 +55,16 @@ CivicMind is a memory-augmented decision support system for urban civic manageme
 ## Files
 
 | File | Lines | Purpose |
-|---|---|---|
-| `scripts/database.py` | 274 | Generates 10,000 synthetic civic episodes for Mumbai |
+|---|---|---|---|
+| `scripts/database.py` | 273 | Generates 10,000 synthetic civic episodes for Mumbai |
 | `dataset/civicmind_episodes.csv` | 10,001 | The generated dataset |
-| `memory/build_embeddings.py` | 56 | Embeds episodes with all-MiniLM-L6-v2 → FAISS index |
-| `memory/build_graph.py` | 68 | Builds causal + temporal knowledge graph from CSV |
+| `memory/build_embeddings.py` | 55 | Embeds episodes with all-MiniLM-L6-v2 → FAISS index |
+| `memory/build_graph.py` | 67 | Builds causal + temporal knowledge graph from CSV |
 | `dataset/civicmind_memory.index` | 15 MB | FAISS L2 index (384-dim) |
 | `dataset/episode_lookup.pkl` | 4.7 MB | Pickled DataFrame with memory_text field |
 | `dataset/civicmind_graph.graphml` | 3.1 MB | NetworkX DiGraph (10,013 nodes, 3,701 edges) |
-| `scripts/transition_stats.py` | 86 | Temporal transition analysis (confidence, delay stats) |
-| `engine/inference.py` | 308 | Core inference engine: prediction, actions, trace |
+| `scripts/transition_stats.py` | 85 | Temporal transition analysis (confidence, delay stats) |
+| `engine/inference.py` | 343 | Core inference engine with passive consolidation |
 | `requirements.txt` | 7 | Python dependencies |
 
 ---
@@ -208,6 +208,6 @@ Fully functional retrieval and inference pipeline. Next steps:
 
 - [ ] Web dashboard (Streamlit) for interactive situation input
 - [ ] LLM summary layer on top of the reasoning trace
-- [ ] Consolidation loop: increment retrieval_count, update confidence_score after each inference
+- [x] Consolidation loop: increment retrieval_count, update confidence_score after each inference
 - [ ] Real city data integration
 - [ ] Cross-validation of fusion weights (0.5/0.3/0.2)
