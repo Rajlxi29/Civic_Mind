@@ -265,7 +265,7 @@ for i in range(NUM_EPISODES):
 df = pd.DataFrame(records)
 
 df.to_csv(
-    os.path.join(SCRIPT_DIR, "civicmind_episodes.csv"),
+    os.path.join(SCRIPT_DIR, "..", "dataset", "civicmind_episodes.csv"),
     index=False
 )
 

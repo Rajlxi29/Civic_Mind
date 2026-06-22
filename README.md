@@ -11,10 +11,10 @@ CivicMind is a memory-augmented decision support system for urban civic manageme
 ## System Architecture
 
 ```
-                         ┌───────────────────┐
-                         │  database.py      │  Synthetic data generator
-                         │  (dataset gen)    │  10,000 realistic civic episodes
-                         └────────┬──────────┘
+                         ┌─────────────────────────┐
+                         │  scripts/database.py     │  Synthetic data generator
+                         │  (dataset gen)           │  10,000 realistic civic episodes
+                         └────────┬─────────────────┘
                                   │
                          ┌────────v──────────┐
                          │  episodes.csv     │
@@ -56,15 +56,14 @@ CivicMind is a memory-augmented decision support system for urban civic manageme
 
 | File | Lines | Purpose |
 |---|---|---|
-| `dataset/database.py` | 274 | Generates 10,000 synthetic civic episodes for Mumbai |
+| `scripts/database.py` | 274 | Generates 10,000 synthetic civic episodes for Mumbai |
 | `dataset/civicmind_episodes.csv` | 10,001 | The generated dataset |
 | `memory/build_embeddings.py` | 56 | Embeds episodes with all-MiniLM-L6-v2 → FAISS index |
-| `memory/retrieve_memories.py` | 34 | Demo: query similar episodes by scenario text |
 | `memory/build_graph.py` | 68 | Builds causal + temporal knowledge graph from CSV |
 | `dataset/civicmind_memory.index` | 15 MB | FAISS L2 index (384-dim) |
 | `dataset/episode_lookup.pkl` | 4.7 MB | Pickled DataFrame with memory_text field |
 | `dataset/civicmind_graph.graphml` | 3.1 MB | NetworkX DiGraph (10,013 nodes, 3,701 edges) |
-| `civic.py` | 86 | Temporal transition analysis (confidence, delay stats) |
+| `scripts/transition_stats.py` | 86 | Temporal transition analysis (confidence, delay stats) |
 | `engine/inference.py` | 308 | Core inference engine: prediction, actions, trace |
 | `requirements.txt` | 7 | Python dependencies |
 
@@ -87,7 +86,7 @@ All commands run from the project root. Generate data first (or use the pre-gene
 
 ```bash
 # Generate 10,000 synthetic episodes
-python dataset/database.py
+python scripts/database.py
 
 # Build FAISS embedding index (takes ~30s)
 python memory/build_embeddings.py
@@ -96,14 +95,9 @@ python memory/build_embeddings.py
 python memory/build_graph.py
 ```
 
-### Query similar past episodes (demo)
-```bash
-python memory/retrieve_memories.py
-```
-
 ### Temporal transition analysis
 ```bash
-python civic.py
+python scripts/transition_stats.py
 ```
 Outputs transition confidence scores, support counts, average delays, and standard deviations between event types from the PRECEDED graph edges.
 
@@ -182,7 +176,7 @@ Built by `memory/build_graph.py`:
 | PRECEDED edges | 3,695 | Episode → Episode, same area_type, within 6h, with time_gap_hours |
 | CONCEPT edges | 6 | Cause value → Event type, weighted by co-occurrence frequency |
 
-Analyzed by `civic.py` which computes transition confidence, support, avg delay, and std deviation.
+Analyzed by `scripts/transition_stats.py` which computes transition confidence, support, avg delay, and std deviation.
 
 ---
 
