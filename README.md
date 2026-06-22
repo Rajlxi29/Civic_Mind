@@ -55,7 +55,7 @@ CivicMind is a memory-augmented decision support system for urban civic manageme
 ## Files
 
 | File | Lines | Purpose |
-|---|---|---|---|
+|--- | --- | ---|
 | `scripts/database.py` | 273 | Generates 10,000 synthetic civic episodes for Mumbai |
 | `dataset/civicmind_episodes.csv` | 10,001 | The generated dataset |
 | `memory/build_embeddings.py` | 55 | Embeds episodes with all-MiniLM-L6-v2 → FAISS index |
