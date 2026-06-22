@@ -5,6 +5,7 @@ import networkx as nx
 import faiss
 from sentence_transformers import SentenceTransformer
 from collections import defaultdict
+import json
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.join(SCRIPT_DIR, "..")
@@ -50,20 +51,35 @@ class CivicMindInference:
     def __init__(self, k_matches: int = 20):
         self.k_matches = k_matches
 
-        dataset_dir = os.path.join(PROJECT_ROOT, "dataset")
+        self.dataset_dir = os.path.join(PROJECT_ROOT, "dataset")
 
         self.model = SentenceTransformer("all-MiniLM-L6-v2")
         self.index = faiss.read_index(
-            os.path.join(dataset_dir, "civicmind_memory.index")
+            os.path.join(self.dataset_dir, "civicmind_memory.index")
         )
         self.df = pd.read_pickle(
-            os.path.join(dataset_dir, "episode_lookup.pkl")
+            os.path.join(self.dataset_dir, "episode_lookup.pkl")
         )
         self.graph = nx.read_graphml(
-            os.path.join(dataset_dir, "civicmind_graph.graphml")
+            os.path.join(self.dataset_dir, "civicmind_graph.graphml")
         )
 
         self._build_graph_cache()
+        self.episode_hits = defaultdict(int)
+        self.global_counter = 0
+        self.importance = defaultdict(float)
+        self.pruned_episodes = set()
+        
+        state_path = os.path.join(self.dataset_dir, "learning_state.json")
+        if os.path.exists(state_path):
+            with open(state_path) as f:
+                state = json.load(f)
+                self.episode_hits.update(state["episode_hits"])
+                self.global_counter = state["global_counter"]
+                self.importance.update(state.get("importance", {}))
+                self.pruned_episodes = set(state.get("pruned_episodes", []))
+
+        self.alpha = 0.01
 
     def _build_graph_cache(self):
         self._concept_out = defaultdict(list)
@@ -98,6 +114,7 @@ class CivicMindInference:
         return "\n".join(parts) + "\n"
 
     def predict(self, situation: dict) -> dict:
+        self.global_counter += 1
         ts = pd.Timestamp(situation["timestamp"])
         weather = _forecast_to_weather(
             situation.get("weather_forecast", "clear")
@@ -139,6 +156,9 @@ class CivicMindInference:
                 "peak_hour": bool(row["peak_hour"]),
             })
 
+        matched = sorted(matched, key=lambda x: (x["similarity"], self.episode_hits.get(x["episode_id"], 0)), reverse=True)
+        matched = [m for m in matched if m["episode_id"] not in self.pruned_episodes]
+
         event_scores = defaultdict(float)
         event_match_counts = defaultdict(int)
         total_sim = sum(similarities)
@@ -147,6 +167,8 @@ class CivicMindInference:
             sim = m["similarity"]
             event_scores[m["event_type"]] += sim
             event_match_counts[m["event_type"]] += 1
+            self.episode_hits[m["episode_id"]] += 1
+            self.importance[m["episode_id"]] += self.alpha * self.episode_hits[m["episode_id"]]
 
         risk_scores_raw = {}
         for evt, score in event_scores.items():
@@ -199,7 +221,7 @@ class CivicMindInference:
 
         seen_actions = set()
         actions = []
-        for m in sorted(matched, key=lambda x: x["similarity"], reverse=True):
+        for m in matched:
             if m["intervention"] == "No Action":
                 continue
             key = (m["intervention"], m["event_type"])
@@ -245,6 +267,20 @@ class CivicMindInference:
                     })
 
         trace = trace[:10]
+        
+        state = {
+                "episode_hits": dict(self.episode_hits),
+                "global_counter": self.global_counter,
+                "importance": dict(self.importance),
+                "pruned_episodes": list(self.pruned_episodes),
+        }
+        with open(os.path.join(self.dataset_dir, "learning_state.json"), "w") as f:
+            json.dump(state, f)
+
+        if self.global_counter % 100 == 0:
+            for ep_id in self.episode_hits:
+                if self.episode_hits[ep_id] == 0:
+                    self.pruned_episodes.add(ep_id)
 
         return {
             "situation": situation,

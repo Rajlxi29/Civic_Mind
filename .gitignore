@@ -5,6 +5,3 @@ __pycache__/
 __pycache__/*
 
 *.~lock.*
-
-# redundant standalone demo, logic duplicated in engine/inference.py
-memory/retrieve_memories.py
