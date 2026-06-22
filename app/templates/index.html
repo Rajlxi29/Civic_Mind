@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CivicMind — Situation Predictor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #0f172a; color: #e2e8f0; min-height: 100vh;
+  }
+  .app {
+    display: grid;
+    grid-template-columns: 420px 1fr;
+    min-height: 100vh;
+  }
+  .sidebar {
+    background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+    border-right: 1px solid #1e293b;
+    padding: 32px 24px;
+    overflow-y: auto;
+    position: sticky; top: 0; height: 100vh;
+  }
+  .logo-wrap {
+    text-align: center; margin-bottom: 6px; padding: 8px 0;
+  }
+  .logo-wrap img {
+    width: 180px; height: auto; display: inline-block;
+    filter: drop-shadow(0 0 20px rgba(59,130,246,0.15));
+  }
+  .logo-sub {
+    text-align: center; font-size: 12px; color: #64748b; margin-bottom: 28px;
+  }
+  .main {
+    padding: 32px 40px;
+    overflow-y: auto;
+    background: #0f172a;
+  }
+  .form-section { margin-bottom: 20px; }
+  .form-section-title {
+    font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em;
+    color: #64748b; margin-bottom: 12px;
+  }
+  .form-group { margin-bottom: 14px; }
+  label {
+    display: block; font-size: 12px; font-weight: 500; margin-bottom: 5px;
+    color: #94a3b8; letter-spacing: 0.01em;
+  }
+  input, select {
+    width: 100%; padding: 9px 12px; background: #1e293b; border: 1px solid #334155;
+    border-radius: 8px; font-size: 13px; font-family: inherit;
+    color: #e2e8f0; transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  input:focus, select:focus {
+    outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+  }
+  select { cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; padding-right: 28px; }
+  input[type="datetime-local"] { color-scheme: dark; }
+  .checkbox-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 6px;
+  }
+  .checkbox-grid label {
+    display: flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 400;
+    color: #cbd5e1; cursor: pointer; padding: 6px 10px; border-radius: 6px;
+    background: #1e293b; border: 1px solid #334155; transition: background 0.15s, border-color 0.15s;
+  }
+  .checkbox-grid label:hover { border-color: #475569; }
+  .checkbox-grid input { display: none; }
+  .checkbox-grid input:checked + span { color: #93c5fd; }
+  .checkbox-grid label:has(input:checked) {
+    border-color: #3b82f6; background: rgba(59,130,246,0.1);
+  }
+  .checkbox-grid span { transition: color 0.15s; }
+  .btn-predict {
+    width: 100%; padding: 11px; background: linear-gradient(135deg, #3b82f6, #2563eb);
+    border: none; border-radius: 8px; color: #fff; font-size: 14px; font-weight: 600;
+    font-family: inherit; cursor: pointer; transition: opacity 0.2s, transform 0.1s;
+    margin-top: 8px; letter-spacing: 0.01em;
+  }
+  .btn-predict:hover { opacity: 0.9; }
+  .btn-predict:active { transform: scale(0.98); }
+  .btn-predict:disabled { background: #334155; color: #64748b; cursor: not-allowed; transform: none; }
+  .error-box {
+    background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3);
+    color: #fca5a5; padding: 10px 14px; border-radius: 8px; font-size: 13px;
+    margin-bottom: 16px; display: none;
+  }
+  .query-box {
+    background: #1e293b; border: 1px solid #334155; border-radius: 10px;
+    padding: 16px 20px; font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 13px; line-height: 1.6; white-space: pre-wrap; margin-bottom: 28px;
+    color: #94a3b8;
+  }
+  .query-box strong { color: #e2e8f0; }
+  .section { margin-bottom: 32px; }
+  .section-header {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 16px;
+  }
+  .section-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+  }
+  .section-title { font-size: 15px; font-weight: 600; color: #f1f5f9; }
+  .section-count {
+    font-size: 12px; color: #64748b; background: #1e293b; padding: 2px 8px;
+    border-radius: 10px; font-weight: 500;
+  }
+  .table-wrap {
+    background: #1e293b; border: 1px solid #334155; border-radius: 10px;
+    overflow: hidden;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th {
+    text-align: left; padding: 10px 16px; font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.05em; color: #64748b;
+    background: #1a2332; border-bottom: 1px solid #334155;
+  }
+  td { padding: 10px 16px; border-bottom: 1px solid #1e293b; color: #cbd5e1; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(59,130,246,0.04); }
+  .sim-bar {
+    display: inline-block; height: 6px; border-radius: 3px; margin-right: 8px;
+    vertical-align: middle;
+  }
+  .risk-row td:first-child { font-weight: 500; color: #e2e8f0; }
+  .card {
+    background: #1e293b; border: 1px solid #334155; border-radius: 10px;
+    padding: 16px 20px; margin-bottom: 10px; transition: border-color 0.15s;
+  }
+  .card:hover { border-color: #475569; }
+  .card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .card-action { font-weight: 600; font-size: 14px; color: #f1f5f9; }
+  .card-conf {
+    font-size: 12px; font-weight: 600; padding: 2px 10px; border-radius: 6px;
+    background: rgba(59,130,246,0.15); color: #93c5fd;
+  }
+  .card-meta { font-size: 12px; color: #64748b; display: flex; gap: 16px; flex-wrap: wrap; }
+  .card-meta span { display: flex; align-items: center; gap: 4px; }
+  .trace-item {
+    display: flex; align-items: center; gap: 10px; font-size: 13px;
+    padding: 8px 14px; margin-bottom: 4px; background: #1e293b;
+    border-radius: 8px; border: 1px solid #334155;
+  }
+  .trace-from, .trace-to { font-weight: 500; color: #e2e8f0; }
+  .trace-arrow { color: #64748b; font-size: 12px; white-space: nowrap; }
+  .trace-type {
+    font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;
+    padding: 2px 6px; border-radius: 4px; margin-right: 4px;
+  }
+  .trace-type-concept { background: rgba(139,92,246,0.15); color: #c4b5fd; }
+  .trace-type-preceded { background: rgba(59,130,246,0.15); color: #93c5fd; }
+  .placeholder {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    height: calc(100vh - 64px); text-align: center; color: #475569;
+  }
+  .placeholder-icon {
+    width: 64px; height: 64px; background: #1e293b; border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; margin-bottom: 20px;
+  }
+  .placeholder h2 { font-size: 18px; font-weight: 600; color: #64748b; margin-bottom: 8px; }
+  .placeholder p { font-size: 13px; max-width: 360px; line-height: 1.5; }
+  .spinner {
+    display: none; text-align: center; padding: 60px 0;
+  }
+  .spinner.active { display: block; }
+  .spinner-inner {
+    width: 32px; height: 32px; border: 3px solid #334155;
+    border-top-color: #3b82f6; border-radius: 50%;
+    animation: spin 0.7s linear infinite; margin: 0 auto 12px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .fade-in { animation: fadeIn 0.3s ease-out; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+  .status-dot.green { background: #22c55e; box-shadow: 0 0 6px rgba(34,197,94,0.4); }
+  .status-dot.yellow { background: #eab308; box-shadow: 0 0 6px rgba(234,179,8,0.4); }
+  .status-dot.red { background: #ef4444; box-shadow: 0 0 6px rgba(239,68,68,0.4); }
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #475569; }
+  @media (max-width: 900px) {
+    .app { grid-template-columns: 1fr; }
+    .sidebar { position: static; height: auto; }
+    .main { padding: 24px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="sidebar">
+    <div class="logo-wrap">
+      <img src="/static/civicmind-logo.svg" alt="CivicMind">
+    </div>
+    <div class="logo-sub">Case-based reasoning for civic prediction</div>
+
+    <div id="error-box" class="error-box"></div>
+
+    <div class="form-section">
+      <div class="form-section-title">Time &amp; Location</div>
+      <div class="form-group">
+        <label for="timestamp">Timestamp</label>
+        <input type="datetime-local" id="timestamp" value="2026-06-17T07:42">
+      </div>
+      <div class="form-group">
+        <label for="ward">Area Type</label>
+        <select id="ward">
+          <option value="Residential">Residential</option>
+          <option value="Commercial">Commercial</option>
+          <option value="Industrial">Industrial</option>
+          <option selected value="Transit Hub">Transit Hub</option>
+          <option value="School Zone">School Zone</option>
+          <option value="Hospital Zone">Hospital Zone</option>
+          <option value="Market Area">Market Area</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">Weather &amp; Conditions</div>
+      <div class="form-group">
+        <label for="weather_forecast">Weather Forecast</label>
+        <select id="weather_forecast">
+          <option value="clear">Clear</option>
+          <option value="cloudy">Cloudy</option>
+          <option value="rain_light">Light Rain</option>
+          <option selected value="rain_6h">Heavy Rain</option>
+          <option value="storm">Storm</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Active Conditions</label>
+        <div class="checkbox-grid" id="active-conditions">
+          <label><input type="checkbox" value="heavy_rain" checked><span>☔ Heavy Rain</span></label>
+          <label><input type="checkbox" value="road_construction" checked><span>🚧 Construction</span></label>
+          <label><input type="checkbox" value="festival"><span>🎪 Festival</span></label>
+          <label><input type="checkbox" value="peak_traffic"><span>🚗 Peak Traffic</span></label>
+          <label><input type="checkbox" value="crowd"><span>👥 Crowd</span></label>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">Event</div>
+      <div class="form-group">
+        <label for="event_name">Event Name</label>
+        <input type="text" id="event_name" placeholder="e.g. City Music Festival" value="City Music Festival">
+      </div>
+      <div class="form-group">
+        <label for="expected_crowd">Expected Crowd</label>
+        <input type="number" id="expected_crowd" placeholder="e.g. 12000" value="12000">
+      </div>
+    </div>
+
+    <button class="btn-predict" id="predict-btn" onclick="runPrediction()">
+      ▶ Run Prediction
+    </button>
+  </div>
+
+  <div class="main" id="results">
+    <div class="placeholder" id="placeholder-view">
+      <div class="placeholder-icon">🧠</div>
+      <h2>Ready to predict</h2>
+      <p>Configure the situation in the sidebar and run a prediction. The engine will retrieve past episodes, compute risk scores, and recommend actions.</p>
+    </div>
+    <div class="spinner" id="spinner-view">
+      <div class="spinner-inner"></div>
+      <div style="font-size:13px;color:#64748b">Retrieving memories…</div>
+    </div>
+    <div id="results-content" style="display:none"></div>
+  </div>
+</div>
+
+<script>
+async function runPrediction() {
+  const btn = document.getElementById("predict-btn");
+  const errorBox = document.getElementById("error-box");
+  const placeholder = document.getElementById("placeholder-view");
+  const spinner = document.getElementById("spinner-view");
+  const content = document.getElementById("results-content");
+
+  btn.disabled = true;
+  btn.textContent = "⏳ Running…";
+  errorBox.style.display = "none";
+  placeholder.style.display = "none";
+  content.style.display = "none";
+  spinner.classList.add("active");
+
+  const ts = document.getElementById("timestamp").value;
+  const conditions = [...document.querySelectorAll("#active-conditions input:checked")].map(cb => cb.value);
+
+  const body = {
+    timestamp: new Date(ts).toISOString(),
+    ward: document.getElementById("ward").value,
+    weather_forecast: document.getElementById("weather_forecast").value,
+    active_conditions: conditions,
+  };
+
+  const eventName = document.getElementById("event_name").value.trim();
+  if (eventName) body.event_name = eventName;
+  const crowd = document.getElementById("expected_crowd").value;
+  if (crowd) body.expected_crowd = parseInt(crowd);
+
+  try {
+    const res = await fetch("/predict", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || "Prediction failed");
+    }
+    const data = await res.json();
+    spinner.classList.remove("active");
+    renderResults(data);
+    content.style.display = "block";
+  } catch (e) {
+    spinner.classList.remove("active");
+    errorBox.textContent = "✕ " + e.message;
+    errorBox.style.display = "block";
+    placeholder.style.display = "flex";
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "▶ Run Prediction";
+  }
+}
+
+function renderResults(data) {
+  const container = document.getElementById("results-content");
+
+  const q = escapeHtml(data.query_text);
+  const maxSim = data.top_matches.length ? Math.max(...data.top_matches.map(m => m.similarity)) : 1;
+
+  let html = '<div class="query-box fade-in">' + q + '</div>';
+
+  if (data.top_matches.length) {
+    html += '<div class="section fade-in">';
+    html += '<div class="section-header"><div class="section-dot" style="background:#3b82f6"></div><span class="section-title">Top Matches</span><span class="section-count">' + data.top_matches.length + '</span></div>';
+    html += '<div class="table-wrap"><table><thead><tr><th>Episode</th><th>Event Type</th><th>Similarity</th><th>Intervention</th></tr></thead><tbody>';
+    for (const m of data.top_matches) {
+      const pct = (m.similarity / maxSim * 100).toFixed(0);
+      const hue = Math.round(120 * m.similarity);
+      html += '<tr><td style="font-family:monospace;color:#64748b">' + m.episode_id + '</td><td>' + m.event_type + '</td><td><span class="sim-bar" style="width:' + pct + '%;background:hsl(' + hue + ',60%,50%)"></span>' + m.similarity.toFixed(3) + '</td><td>' + m.intervention + '</td></tr>';
+    }
+    html += '</tbody></table></div></div>';
+  }
+
+  if (data.risk_scores.length) {
+    html += '<div class="section fade-in">';
+    html += '<div class="section-header"><div class="section-dot" style="background:#8b5cf6"></div><span class="section-title">Risk Scores</span><span class="section-count">' + data.risk_scores.length + '</span></div>';
+    html += '<div class="table-wrap"><table><thead><tr><th>Event</th><th>Combined</th><th>Retrieval</th><th>Transition</th><th>Concept</th></tr></thead><tbody>';
+    for (const rs of data.risk_scores) {
+      html += '<tr class="risk-row"><td>' + rs.event + '</td><td><span class="' + scoreClass(rs.combined_score) + '">' + rs.combined_score.toFixed(3) + '</span></td><td>' + rs.retrieval_score.toFixed(3) + '</td><td>' + rs.transition_score.toFixed(3) + '</td><td>' + rs.concept_score.toFixed(3) + '</td></tr>';
+    }
+    html += '</tbody></table></div></div>';
+  }
+
+  if (data.actions.length) {
+    html += '<div class="section fade-in">';
+    html += '<div class="section-header"><div class="section-dot" style="background:#22c55e"></div><span class="section-title">Recommended Actions</span><span class="section-count">' + data.actions.length + '</span></div>';
+    for (const a of data.actions) {
+      html += '<div class="card"><div class="card-top"><span class="card-action">' + a.action + '</span><span class="card-conf">' + a.confidence.toFixed(3) + '</span></div><div class="card-meta"><span>🎯 ' + a.target_event + '</span><span>📄 ' + a.source_episode + '</span><span>📊 sim ' + a.similarity.toFixed(3) + '</span><span>⭐ outcome ' + a.outcome_score.toFixed(2) + '</span></div></div>';
+    }
+    html += '</div>';
+  }
+
+  if (data.trace.length) {
+    html += '<div class="section fade-in">';
+    html += '<div class="section-header"><div class="section-dot" style="background:#f59e0b"></div><span class="section-title">Reasoning Trace</span><span class="section-count">' + data.trace.length + '</span></div>';
+    for (const t of data.trace) {
+      const typeClass = t.type === "CONCEPT" ? "trace-type-concept" : "trace-type-preceded";
+      const arrow = t.type === "CONCEPT"
+        ? '<span class="trace-arrow">──(' + t.confidence + ')──▶</span>'
+        : '<span class="trace-arrow">──(' + t.confidence + ', ' + t.time_gap_hours + 'h)──▶</span>';
+      html += '<div class="trace-item"><span class="trace-type ' + typeClass + '">' + t.type + '</span><span class="trace-from">' + escapeHtml(t.from) + '</span> ' + arrow + ' <span class="trace-to">' + escapeHtml(t.to) + '</span></div>';
+    }
+    html += '</div>';
+  }
+
+  if (!data.top_matches.length && !data.risk_scores.length && !data.actions.length && !data.trace.length) {
+    html += '<div class="placeholder"><div class="placeholder-icon">📭</div><h2>No results</h2><p>The engine returned empty results for this situation.</p></div>';
+  }
+
+  container.innerHTML = html;
+}
+
+function scoreClass(v) {
+  if (v >= 0.3) return 'status-dot green';
+  if (v >= 0.15) return 'status-dot yellow';
+  return 'status-dot red';
+}
+
+function escapeHtml(t) {
+  const d = document.createElement("div");
+  d.textContent = t;
+  return d.innerHTML;
+}
+</script>
+</body>
+</html>
