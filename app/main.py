@@ -7,6 +7,7 @@ import google.genai as genai
 from google.genai.types import GenerateContentConfig
 from google.genai import errors as genai_errors
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -31,6 +32,13 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from engine.inference import CivicMindInference
 
 app = FastAPI(title="CivicMind Dashboard")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 static_dir = os.path.join(os.path.dirname(__file__), "static")
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
